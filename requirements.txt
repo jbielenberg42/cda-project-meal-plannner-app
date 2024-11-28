@@ -1,0 +1,4 @@
+pandas
+numpy
+scikit-learn
+bottleneck>=1.3.6
