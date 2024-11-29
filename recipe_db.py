@@ -5,8 +5,16 @@ import json
 class RecipeDB:
 
     def __init__(self, cuisine_classifier):
-        self.recipes = self.load_and_clean_data()
         self.cuisine_classifier = cuisine_classifier
+        self.recipes = self.load_and_clean_data()
+        # Extract features for all recipes
+        self.recipes['features'] = self.cuisine_classifier.extract_features_from_new_recipes(
+            self.recipes['ingredients'].apply(lambda x: x.split())
+        )
+        # Predict cuisines for all recipes
+        self.recipes['predicted_cuisine'] = self.cuisine_classifier.clf.predict(
+            pd.concat(self.recipes['features'].tolist()).reset_index(drop=True)
+        )
 
     def load_and_clean_data(self):
         with open("data/recipes_raw_nosource_epi.json", "r") as json_f:
