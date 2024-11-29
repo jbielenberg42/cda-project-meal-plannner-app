@@ -1,11 +1,26 @@
+import argparse
+import pickle
 from cuisine_classifier import CuisineClassifier
 
-def main():
-    # Initialize classifier with training data
-    classifier = CuisineClassifier("data/yumly_train.json")
+
+def main(retrain_classifier):
+    if retrain_classifier:
+        print("Retraining classifier...")
+        cuisine_classifier = CuisineClassifier("data/yumly_train.json")
+        with open("cuisine_classifier.pkl", "wb") as f:
+            pickle.dump(cuisine_classifier, f)
+    else:
+        with open("cuisine_classifier.pkl", "rb") as f:
+            cuisine_classifier = pickle.load(f)
     
-    # Print out the out-of-bag score (accuracy)
-    print(f"Classifier accuracy (OOB score): {classifier.cuisine_clf.oob_score_:.3f}")
+    print(cuisine_classifier.classification_report)
+
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--retrain_classifier", action="store_true", help="Retrain the classifier"
+    )
+    args = parser.parse_args()
+
+    main(retrain_classifier=args.retrain_classifier)
