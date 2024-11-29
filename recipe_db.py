@@ -4,8 +4,9 @@ import json
 
 class RecipeDB:
 
-    def __init__(self):
+    def __init__(self, cuisine_classifier):
         self.recipes = self.load_and_clean_data()
+        self.cuisine_classifier = cuisine_classifier
 
     def load_and_clean_data(self):
         with open("data/recipes_raw_nosource_epi.json", "r") as json_f:
