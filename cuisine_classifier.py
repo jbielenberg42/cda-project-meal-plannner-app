@@ -14,7 +14,7 @@ class CuisineClassifier:
         self.clf = self.train_classifier()
         self.features = self.X.columns
         self.cuisines = self.clf.classes_
-        self.oob_predictions = self.clf.oob_decision_function_.argmax(axis=1)
+        self.oob_predictions = self.cuisines[self.clf.oob_decision_function_.argmax(axis=1)]
         self.classification_report = classification_report(self.y, self.oob_predictions)
 
 
