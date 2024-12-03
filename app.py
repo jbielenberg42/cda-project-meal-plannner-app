@@ -2,6 +2,7 @@ import argparse
 import pickle
 from cuisine_classifier import CuisineClassifier
 from recipe_db import RecipeDB
+from meal_plan import MealPlan
 import matplotlib.pyplot as plt
 
 
