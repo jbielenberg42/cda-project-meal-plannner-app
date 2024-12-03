@@ -33,10 +33,12 @@ def main(retrain_classifier, reload_recipe_db):
     
     # Display results
     for i, (meal, new_ingredients) in enumerate(results, 1):
+        total_ingredients = set(meal['ingredients'].split())
         print(f"\nMeal {i}: {meal['title']}")
+        print(f"Total ingredients ({len(total_ingredients)}): {', '.join(sorted(total_ingredients))}")
         print(f"New ingredients added ({len(new_ingredients)}): {', '.join(sorted(new_ingredients))}")
     
-    print(f"\nTotal unique ingredients needed: {len(all_ingredients)}")
+    print(f"\nTotal unique ingredients needed across all meals: {len(all_ingredients)}")
 
 
 if __name__ == "__main__":
