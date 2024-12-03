@@ -60,9 +60,14 @@ class MealPlan:
         return None
         
     def add_optimal_meal(self):
-        """Add a meal that introduces the least number of new ingredients."""
+        """Add a meal that introduces the least number of new ingredients.
+        
+        Returns:
+            tuple: (meal_dict, set of new ingredients added)
+        """
         if not self.meals:
-            return self.add_first_meal()
+            meal = self.add_first_meal()
+            return meal, set(meal['ingredients'].split())
             
         current_ingredients = self._get_current_ingredients()
         
@@ -83,5 +88,8 @@ class MealPlan:
             'instructions': best_recipe['instructions']
         }
         
+        # Calculate new ingredients this meal adds
+        new_ingredients = set(best_meal['ingredients'].split()) - current_ingredients
+        
         self.meals.append(best_meal)
-        return best_meal
+        return best_meal, new_ingredients
