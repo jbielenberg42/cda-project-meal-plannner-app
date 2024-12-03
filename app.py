@@ -24,20 +24,6 @@ def main(retrain_classifier, reload_recipe_db):
         with open("recipe_db.pkl", "rb") as f:
             recipe_db = pickle.load(f)
 
-    principle_components = cuisine_classifier.cuisine_pca
-    plt.figure(figsize=(10, 8))
-    plt.scatter(principle_components["1"], principle_components["2"])
-
-    for i, txt in enumerate(principle_components.index):
-        plt.annotate(
-            txt, (principle_components["1"].iloc[i], principle_components["2"].iloc[i])
-        )
-
-    plt.xlabel("Component 1")
-    plt.ylabel("Component 2")
-    plt.title("PCA Scatter Plot of Ingredients by Cuisine")
-    plt.show()
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
