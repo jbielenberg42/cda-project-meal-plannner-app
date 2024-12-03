@@ -22,18 +22,19 @@ class MealPlan:
             ingredients.update(meal['ingredients'].split())
         return ingredients
         
-    def _count_new_ingredients(self, recipe_ingredients, current_ingredients):
-        """Count how many new ingredients a recipe would add.
+    def _count_new_ingredients_vectorized(self, ingredients_series, current_ingredients):
+        """Count new ingredients for each recipe in vectorized way.
         
         Args:
-            recipe_ingredients: String of space-separated ingredients
+            ingredients_series: Series of space-separated ingredients strings
             current_ingredients: Set of existing ingredients
             
         Returns:
-            int: Number of new ingredients that would be added
+            Series: Number of new ingredients that would be added for each recipe
         """
-        recipe_ingredient_set = set(recipe_ingredients.split())
-        return len(recipe_ingredient_set - current_ingredients)
+        return ingredients_series.apply(
+            lambda x: len(set(x.split()) - current_ingredients)
+        )
         
     def _select_random_meal(self):
         """Select a random meal from the recipe database.
@@ -65,26 +66,22 @@ class MealPlan:
             
         current_ingredients = self._get_current_ingredients()
         
-        # Calculate new ingredients needed for each recipe
-        min_new_ingredients = float('inf')
-        best_meal = None
+        # Calculate new ingredients needed for all recipes at once
+        new_ingredient_counts = self._count_new_ingredients_vectorized(
+            self.recipe_db.recipes['ingredients'],
+            current_ingredients
+        )
         
-        for idx, recipe in self.recipe_db.recipes.iterrows():
-            new_ingredient_count = self._count_new_ingredients(
-                recipe['ingredients'], 
-                current_ingredients
-            )
-            
-            if new_ingredient_count < min_new_ingredients:
-                min_new_ingredients = new_ingredient_count
-                best_meal = {
-                    'index': idx,
-                    'title': recipe['title'],
-                    'ingredients': recipe['ingredients'],
-                    'instructions': recipe['instructions']
-                }
+        # Get index of recipe with minimum new ingredients
+        best_idx = new_ingredient_counts.idxmin()
+        best_recipe = self.recipe_db.recipes.iloc[best_idx]
         
-        if best_meal:
-            self.meals.append(best_meal)
-            return best_meal
-        return None
+        best_meal = {
+            'index': best_idx,
+            'title': best_recipe['title'],
+            'ingredients': best_recipe['ingredients'],
+            'instructions': best_recipe['instructions']
+        }
+        
+        self.meals.append(best_meal)
+        return best_meal
