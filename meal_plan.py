@@ -69,7 +69,7 @@ class MealPlan:
     def _get_target_cuisine(self):
         """Determine the cuisine with maximum total distance from selected cuisines."""
         if not self.selected_cuisines:
-            return random.choice(self.cuisine_classifier.cuisines)
+            return random.choice(list(self.cuisine_classifier.cuisine_distances.index))
             
         # Calculate total distance from each cuisine to all selected cuisines
         distances = self.cuisine_classifier.cuisine_distances
@@ -77,7 +77,13 @@ class MealPlan:
         
         # Remove already selected cuisines
         available_cuisines = set(distances.index) - self.selected_cuisines
-        return total_distances[list(available_cuisines)].idxmax()
+        if not available_cuisines:
+            # If all cuisines have been selected, allow reusing cuisines
+            available_cuisines = set(distances.index)
+            
+        # Filter total_distances to only include available cuisines
+        filtered_distances = total_distances[list(available_cuisines)]
+        return filtered_distances.idxmax()
     
     def add_optimal_meal(self):
         """Add a meal that introduces the least number of new ingredients from the target cuisine.
