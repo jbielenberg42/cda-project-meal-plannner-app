@@ -13,6 +13,17 @@ class RecipeDB:
                 self.recipes["ingredients"]
             )
         )
+        
+        # Remove recipes with no features after classifier processing
+        valid_recipes = (self.recipe_ingredient_matrix.sum(axis=1) > 0)
+        self.recipes = self.recipes[valid_recipes].reset_index(drop=True)
+        self.recipe_ingredient_matrix = self.recipe_ingredient_matrix[valid_recipes]
+        
+        # Print info about removed recipes
+        num_removed = (~valid_recipes).sum()
+        if num_removed > 0:
+            print(f"Removed {num_removed} recipes with no features after classifier processing")
+        
         self.recipe_cuisine_predictions = cuisine_classifier.cuisine_prediction_df(
             self.recipe_ingredient_matrix
         )
