@@ -24,21 +24,6 @@ class MealPlan:
             ingredients.update(meal["ingredients"].split())
         return ingredients
 
-    def _count_new_ingredients_vectorized(
-        self, ingredients_series, current_ingredients
-    ):
-        """Count new ingredients for each recipe in vectorized way.
-
-        Args:
-            ingredients_series: Series of space-separated ingredients strings
-            current_ingredients: Set of existing ingredients
-
-        Returns:
-            Series: Number of new ingredients that would be added for each recipe
-        """
-        return ingredients_series.apply(
-            lambda x: len(set(x.split()) - current_ingredients)
-        )
 
     def _select_random_meal(self):
         """Select a random meal from the recipe database.
@@ -96,25 +81,24 @@ class MealPlan:
 
         current_ingredients = self._get_current_ingredients()
 
-        # Calculate new ingredients needed for all recipes at once
-        new_ingredient_counts = self._count_new_ingredients_vectorized(
-            self.recipe_db.recipes["ingredients"], current_ingredients
-        )
+        # Get current recipe ingredient matrix for meals in the plan
+        current_ingredients_matrix = self.recipe_db.recipe_ingredient_matrix.iloc[list(self.used_indices)].sum(axis=0) > 0
+
+        # Calculate new ingredients needed for each recipe
+        new_ingredients_per_recipe = (self.recipe_db.recipe_ingredient_matrix & ~current_ingredients_matrix).sum(axis=1)
 
         # Filter for recipes from target cuisine
         cuisine_mask = (
             self.recipe_db.recipe_cuisine_predictions["predicted_cuisine"]
             == target_cuisine
         )
-        available_mask = (
-            ~new_ingredient_counts.index.isin(self.used_indices) & cuisine_mask
-        )
+        available_mask = ~new_ingredients_per_recipe.index.isin(self.used_indices) & cuisine_mask
 
         if not available_mask.any():
             # If no recipes available from target cuisine, fall back to any cuisine
-            available_mask = ~new_ingredient_counts.index.isin(self.used_indices)
+            available_mask = ~new_ingredients_per_recipe.index.isin(self.used_indices)
 
-        best_idx = new_ingredient_counts[available_mask].idxmin()
+        best_idx = new_ingredients_per_recipe[available_mask].idxmin()
         self.used_indices.add(best_idx)
         best_recipe = self.recipe_db.recipes.iloc[best_idx]
 
@@ -131,8 +115,10 @@ class MealPlan:
             "instructions": best_recipe["instructions"],
         }
 
-        # Calculate new ingredients this meal adds
-        new_ingredients = set(best_meal["ingredients"].split()) - current_ingredients
+        # Calculate new ingredients this meal adds using the ingredient matrix
+        new_ingredients = set(self.recipe_db.recipe_ingredient_matrix.columns[
+            (self.recipe_db.recipe_ingredient_matrix.iloc[best_idx] & ~current_ingredients_matrix)
+        ])
 
         self.meals.append(best_meal)
         return best_meal, new_ingredients, cuisine
