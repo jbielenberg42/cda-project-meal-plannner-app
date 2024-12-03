@@ -93,3 +93,22 @@ class MealPlan:
         
         self.meals.append(best_meal)
         return best_meal, new_ingredients
+
+    def plan_meals(self, num_meals=4):
+        """Plan multiple meals while minimizing new ingredients.
+        
+        Args:
+            num_meals: Number of meals to plan (default: 4)
+            
+        Returns:
+            list: List of tuples containing (meal info, new ingredients)
+        """
+        results = []
+        all_ingredients = set()
+        
+        for i in range(num_meals):
+            meal, new_ingredients = self.add_optimal_meal()
+            results.append((meal, new_ingredients))
+            all_ingredients.update(new_ingredients)
+            
+        return results, all_ingredients

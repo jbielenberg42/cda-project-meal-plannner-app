@@ -25,18 +25,16 @@ def main(retrain_classifier, reload_recipe_db):
         with open("recipe_db.pkl", "rb") as f:
             recipe_db = pickle.load(f)
     
-    # Create meal plan
+    # Create and execute meal plan
     meal_plan = MealPlan(recipe_db, cuisine_classifier)
-    all_ingredients = set()
+    results, all_ingredients = meal_plan.plan_meals(num_meals=4)
     
     print("\nSelecting 4 meals with minimal new ingredients:\n")
     
-    # Select 4 meals
-    for i in range(4):
-        meal, new_ingredients = meal_plan.add_optimal_meal()
-        print(f"\nMeal {i+1}: {meal['title']}")
+    # Display results
+    for i, (meal, new_ingredients) in enumerate(results, 1):
+        print(f"\nMeal {i}: {meal['title']}")
         print(f"New ingredients added ({len(new_ingredients)}): {', '.join(sorted(new_ingredients))}")
-        all_ingredients.update(new_ingredients)
     
     print(f"\nTotal unique ingredients needed: {len(all_ingredients)}")
 
