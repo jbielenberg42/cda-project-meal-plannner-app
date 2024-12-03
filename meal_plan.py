@@ -14,6 +14,7 @@ class MealPlan:
         self.recipe_db = recipe_db
         self.cuisine_classifier = cuisine_classifier
         self.meals = []  # Will store selected meals from recipe_db
+        self.used_indices = set()  # Track which meals have been used
         
     def _get_current_ingredients(self):
         """Get set of all ingredients currently in the meal plan."""
@@ -42,7 +43,12 @@ class MealPlan:
         Returns:
             dict: Selected recipe with index and details
         """
-        idx = random.randint(0, len(self.recipe_db.recipes) - 1)
+        available_indices = set(range(len(self.recipe_db.recipes))) - self.used_indices
+        if not available_indices:
+            raise ValueError("No more available meals to select from!")
+        
+        idx = random.choice(list(available_indices))
+        self.used_indices.add(idx)
         recipe = self.recipe_db.recipes.iloc[idx]
         return {
             'index': idx,
@@ -77,8 +83,10 @@ class MealPlan:
             current_ingredients
         )
         
-        # Get index of recipe with minimum new ingredients
-        best_idx = new_ingredient_counts.idxmin()
+        # Get index of recipe with minimum new ingredients, excluding used meals
+        available_mask = ~new_ingredient_counts.index.isin(self.used_indices)
+        best_idx = new_ingredient_counts[available_mask].idxmin()
+        self.used_indices.add(best_idx)
         best_recipe = self.recipe_db.recipes.iloc[best_idx]
         
         best_meal = {
