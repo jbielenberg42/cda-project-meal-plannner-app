@@ -34,7 +34,7 @@ class CuisineClassifier:
         # Remove infrequently used ingredients
         min_num_ingredient_occurences = 10
         X = X.loc[:, (X.sum(axis=0) >= min_num_ingredient_occurences)]
-        
+
         # Remove recipes that have no ingredients after filtering
         valid_recipes = X.sum(axis=1) > 0
         X = X[valid_recipes]
@@ -88,16 +88,16 @@ class CuisineClassifier:
     def _calculate_cuisine_distances(self):
         """Calculate pairwise distances between cuisines based on PCA vectors."""
         from scipy.spatial.distance import pdist, squareform
-        
+
         # Calculate pairwise Euclidean distances between cuisine PCA vectors
-        distances = pdist(self.cuisine_pca, metric='euclidean')
-        
+        distances = pdist(self.cuisine_pca, metric="euclidean")
+
         # Convert to square matrix and wrap in DataFrame with cuisine labels
         distance_matrix = squareform(distances)
         return pd.DataFrame(
             distance_matrix,
             index=self.cuisine_pca.index,
-            columns=self.cuisine_pca.index
+            columns=self.cuisine_pca.index,
         )
 
     def _cuisine_pca(self, explained_variance_perc=0.95):
@@ -111,3 +111,11 @@ class CuisineClassifier:
         for i in range(n_components):
             vectors[f"{i+1}"] = (U[:, i] @ X_T) / (S[i] ** 0.05)
         return vectors
+
+    def avg_dist_from_other_cuisines(self, cuisines_so_far):
+        if not cuisines_so_far:
+            raise ValueError("The input list of cuisines cannot be empty.")
+        distances = self.cuisine_distances[list(cuisines_so_far)]
+        distances = distances.drop(cuisines_so_far)
+        average_distances = distances.mean(axis=1)
+        return average_distances.sort_values()

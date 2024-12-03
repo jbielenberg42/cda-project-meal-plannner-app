@@ -27,14 +27,15 @@ def main(retrain_classifier, reload_recipe_db):
     
     # Create and execute meal plan
     meal_plan = MealPlan(recipe_db, cuisine_classifier)
-    results, all_ingredients = meal_plan.plan_meals(num_meals=4)
+    meals, all_ingredients = meal_plan.plan_meals(num_meals=4)
     
     print("\nSelecting 4 meals with minimal new ingredients:\n")
     
     # Display results
-    for i, (meal, new_ingredients) in enumerate(results, 1):
-        total_ingredients = set(meal['ingredients'].split())
+    for i, (meal, new_ingredients, cuisine) in enumerate(meals, 1):
+        total_ingredients = set(meal['ingredients'])
         print(f"\nMeal {i}: {meal['title']}")
+        print(f"Cuisine: {cuisine}")
         print(f"Total ingredients ({len(total_ingredients)}): {', '.join(sorted(total_ingredients))}")
         print(f"New ingredients added ({len(new_ingredients)}): {', '.join(sorted(new_ingredients))}")
     
