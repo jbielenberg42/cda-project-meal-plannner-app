@@ -33,6 +33,11 @@ class CuisineClassifier:
         # Remove infrequently used ingredients
         min_num_ingredient_occurences = 10
         X = X.loc[:, (X.sum(axis=0) >= min_num_ingredient_occurences)]
+        
+        # Remove recipes that have no ingredients after filtering
+        valid_recipes = X.sum(axis=1) > 0
+        X = X[valid_recipes]
+        y = y[valid_recipes]
 
         # Fit an initial model for extracting feature importance
         rf_model = RandomForestClassifier(
