@@ -19,6 +19,7 @@ class CuisineClassifier:
         ]
         self.classification_report = classification_report(self.y, self.oob_predictions)
         self.cuisine_pca = self._cuisine_pca()
+        self.cuisine_distances = self._calculate_cuisine_distances()
 
     def _format_and_clean_ingredient_data(self, data_file_path):
         # Load data
@@ -83,6 +84,21 @@ class CuisineClassifier:
         df["predicted_cuisine"] = self.clf.predict(recipe_ingredient_matrix)
         df["predicted_cuisine_prob"] = np.max(cuisine_probabilities, axis=1)
         return df
+
+    def _calculate_cuisine_distances(self):
+        """Calculate pairwise distances between cuisines based on PCA vectors."""
+        from scipy.spatial.distance import pdist, squareform
+        
+        # Calculate pairwise Euclidean distances between cuisine PCA vectors
+        distances = pdist(self.cuisine_pca, metric='euclidean')
+        
+        # Convert to square matrix and wrap in DataFrame with cuisine labels
+        distance_matrix = squareform(distances)
+        return pd.DataFrame(
+            distance_matrix,
+            index=self.cuisine_pca.index,
+            columns=self.cuisine_pca.index
+        )
 
     def _cuisine_pca(self, explained_variance_perc=0.95):
         # Laziness in notation here. Self.X != X
