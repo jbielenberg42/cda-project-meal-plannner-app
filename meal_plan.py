@@ -15,6 +15,7 @@ class MealPlan:
         self.cuisine_classifier = cuisine_classifier
         self.meals = []  # Will store selected meals from recipe_db
         self.used_indices = set()  # Track which meals have been used
+        self.selected_cuisines = set()  # Track selected cuisines
         
     def _get_current_ingredients(self):
         """Get set of all ingredients currently in the meal plan."""
@@ -65,16 +66,34 @@ class MealPlan:
             return meal
         return None
         
+    def _get_target_cuisine(self):
+        """Determine the cuisine with maximum total distance from selected cuisines."""
+        if not self.selected_cuisines:
+            return random.choice(self.cuisine_classifier.cuisines)
+            
+        # Calculate total distance from each cuisine to all selected cuisines
+        distances = self.cuisine_classifier.cuisine_distances
+        total_distances = distances[list(self.selected_cuisines)].sum()
+        
+        # Remove already selected cuisines
+        available_cuisines = set(distances.index) - self.selected_cuisines
+        return total_distances[list(available_cuisines)].idxmax()
+    
     def add_optimal_meal(self):
-        """Add a meal that introduces the least number of new ingredients.
+        """Add a meal that introduces the least number of new ingredients from the target cuisine.
         
         Returns:
             tuple: (meal_dict, set of new ingredients added)
         """
         if not self.meals:
             meal = self.add_first_meal()
+            cuisine = self.recipe_db.recipe_cuisine_predictions.iloc[meal['index']]['predicted_cuisine']
+            self.selected_cuisines.add(cuisine)
             return meal, set(meal['ingredients'].split())
             
+        # Get target cuisine based on distances
+        target_cuisine = self._get_target_cuisine()
+        
         current_ingredients = self._get_current_ingredients()
         
         # Calculate new ingredients needed for all recipes at once
@@ -83,11 +102,21 @@ class MealPlan:
             current_ingredients
         )
         
-        # Get index of recipe with minimum new ingredients, excluding used meals
-        available_mask = ~new_ingredient_counts.index.isin(self.used_indices)
+        # Filter for recipes from target cuisine
+        cuisine_mask = (self.recipe_db.recipe_cuisine_predictions['predicted_cuisine'] == target_cuisine)
+        available_mask = ~new_ingredient_counts.index.isin(self.used_indices) & cuisine_mask
+        
+        if not available_mask.any():
+            # If no recipes available from target cuisine, fall back to any cuisine
+            available_mask = ~new_ingredient_counts.index.isin(self.used_indices)
+        
         best_idx = new_ingredient_counts[available_mask].idxmin()
         self.used_indices.add(best_idx)
         best_recipe = self.recipe_db.recipes.iloc[best_idx]
+        
+        # Update selected cuisines
+        cuisine = self.recipe_db.recipe_cuisine_predictions.iloc[best_idx]['predicted_cuisine']
+        self.selected_cuisines.add(cuisine)
         
         best_meal = {
             'index': best_idx,
