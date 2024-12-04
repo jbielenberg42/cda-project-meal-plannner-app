@@ -1,8 +1,6 @@
 .aider*
-.env
 .venv/
 data/*
-proposal/*
 .vscode/*
 *.pkl
 __pycache__/*
