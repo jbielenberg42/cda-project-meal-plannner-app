@@ -1,6 +1,6 @@
 from sklearn.preprocessing import MultiLabelBinarizer
+from sklearn.svm import LinearSVC
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report
 import pandas as pd
 import numpy as np
 import json
@@ -14,10 +14,6 @@ class CuisineClassifier:
         self.clf = self._train_classifier()
         self.features = self.X.columns
         self.cuisines = self.clf.classes_
-        self.oob_predictions = self.cuisines[
-            self.clf.oob_decision_function_.argmax(axis=1)
-        ]
-        self.classification_report = classification_report(self.y, self.oob_predictions)
         self.cuisine_pca = self._cuisine_pca()
         self.cuisine_distances = self._calculate_cuisine_distances()
 
@@ -39,31 +35,12 @@ class CuisineClassifier:
         valid_recipes = X.sum(axis=1) > 0
         X = X[valid_recipes]
         y = y[valid_recipes]
-
-        # Fit an initial model for extracting feature importance
-        rf_model = RandomForestClassifier(
-            n_estimators=100, max_features=10, n_jobs=8, min_samples_split=50
-        )
-        rf_model.fit(X, y)
-        feature_importance = pd.Series(rf_model.feature_importances_, index=X.columns)
-        feature_importance.sort_values(ascending=True, inplace=True)
-        importance_threshold = 0.95
-        important_features = feature_importance[
-            feature_importance.cumsum() <= importance_threshold
-        ]
-        X = X[important_features.index]
         return X, y
 
     def _train_classifier(self):
-        rf_model = RandomForestClassifier(
-            n_estimators=100,
-            max_features=10,
-            n_jobs=8,
-            min_samples_split=50,
-            oob_score=True,
-        )
-        rf_model.fit(self.X, self.y)
-        return rf_model
+        clf = LinearSVC(C=.1)
+        clf.fit(self.X, self.y)
+        return clf
 
     def extract_features_from_new_recipes(self, recipe_ingredients: pd.Series):
         n = len(self.features)
@@ -77,12 +54,7 @@ class CuisineClassifier:
 
     def cuisine_prediction_df(self, recipe_ingredient_matrix):
         df = pd.DataFrame()
-        cuisine_probabilities = self.clf.predict_proba(recipe_ingredient_matrix)
-        for i, cuisine in enumerate(self.clf.classes_):
-            df[f"prob_{cuisine}"] = cuisine_probabilities[:, i]
-
         df["predicted_cuisine"] = self.clf.predict(recipe_ingredient_matrix)
-        df["predicted_cuisine_prob"] = np.max(cuisine_probabilities, axis=1)
         return df
 
     def _calculate_cuisine_distances(self):
